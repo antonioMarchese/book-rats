@@ -62,7 +62,7 @@ export default async function GroupPage({ params }: Props) {
         style={{ borderColor: "var(--br-border)" }}
       >
         <Link
-          href="/"
+          href="/dashboard"
           className="text-2xl leading-none"
           style={{ color: "var(--br-muted)" }}
           aria-label="Back to clubs"

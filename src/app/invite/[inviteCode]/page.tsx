@@ -41,7 +41,7 @@ export default async function InvitePage({ params, searchParams }: Props) {
             This invite link is invalid or has expired.
           </p>
           <Link
-            href="/"
+            href="/dashboard"
             className="inline-block mt-4 text-sm"
             style={{ color: "var(--br-accent)" }}
           >

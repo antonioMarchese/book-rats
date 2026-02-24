@@ -9,5 +9,5 @@ export async function dismissPwaTutorial(): Promise<void> {
     where: { id: user.id },
     data: { hasSeenPwaTutorial: true },
   });
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
