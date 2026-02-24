@@ -7,8 +7,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { leaveGroup } from "@/actions/groups";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 interface Props {
   groupId: string;
@@ -18,6 +19,9 @@ interface Props {
 
 export function GroupMenu({ groupId, inviteUrl, isAdmin }: Props) {
   const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleInvite = async () => {
     await navigator.clipboard.writeText(inviteUrl);
@@ -25,9 +29,31 @@ export function GroupMenu({ groupId, inviteUrl, isAdmin }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) setConfirmLeave(false); // reset on close
+  };
+
+  const handleLeaveClick = (e: Event) => {
+    e.preventDefault(); // keep dropdown open
+    setConfirmLeave(true);
+  };
+
+  const handleConfirmLeave = (e: Event) => {
+    e.preventDefault();
+    startTransition(async () => {
+      await leaveGroup(groupId);
+    });
+  };
+
+  const handleCancelLeave = (e: Event) => {
+    e.preventDefault();
+    setConfirmLeave(false);
+  };
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={open} onOpenChange={handleOpenChange}>
         <DropdownMenuTrigger asChild>
           <button
             aria-label="Group options"
@@ -67,6 +93,35 @@ export function GroupMenu({ groupId, inviteUrl, isAdmin }: Props) {
                 </Link>
               </DropdownMenuItem>
             </>
+          )}
+
+          <DropdownMenuSeparator />
+
+          {confirmLeave ? (
+            <>
+              <DropdownMenuItem
+                onSelect={handleConfirmLeave}
+                disabled={isPending}
+                className="flex items-center gap-2 cursor-pointer font-semibold"
+                style={{ color: "#ef4444" }}
+              >
+                {isPending ? "Leaving…" : "⚠️ Yes, leave"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={handleCancelLeave}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                Cancel
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem
+              onSelect={handleLeaveClick}
+              className="flex items-center gap-2 cursor-pointer"
+              style={{ color: "#ef4444" }}
+            >
+              🚪 Leave club
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

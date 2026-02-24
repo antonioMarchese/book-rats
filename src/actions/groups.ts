@@ -189,3 +189,36 @@ export async function joinGroup(formData: FormData): Promise<void> {
   revalidatePath("/");
   redirect(`/groups/${group.id}`);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// leaveGroup
+// Removes the authenticated user from the group.
+// If the group has no remaining members, it is deleted entirely — which
+// cascades to all GroupMember and CheckIn records via Prisma's onDelete rules.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function leaveGroup(groupId: string): Promise<void> {
+  const user = await requireUser();
+
+  // Verify membership before touching anything
+  const membership = await prisma.groupMember.findUnique({
+    where: { userId_groupId: { userId: user.id, groupId } },
+  });
+
+  if (!membership) redirect("/");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.groupMember.delete({
+      where: { userId_groupId: { userId: user.id, groupId } },
+    });
+
+    const remaining = await tx.groupMember.count({ where: { groupId } });
+
+    if (remaining === 0) {
+      // No members left — delete the group; cascades to all check-ins
+      await tx.group.delete({ where: { id: groupId } });
+    }
+  });
+
+  revalidatePath("/");
+  redirect("/");
+}

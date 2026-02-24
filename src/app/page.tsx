@@ -6,6 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import PwaBanner from "./PwaBanner";
 import { dismissPwaTutorial } from "@/actions/user";
+import { GroupCardMenu } from "./GroupCardMenu";
 
 async function signOut() {
   "use server";
@@ -109,14 +110,17 @@ export default async function DashboardPage() {
         ) : (
           <ul className="space-y-3">
             {groups.map((group) => (
-              <li key={group.id}>
+              <li
+                key={group.id}
+                className="flex items-stretch rounded-2xl border overflow-hidden transition-colors hover:border-white/20"
+                style={{
+                  backgroundColor: "var(--br-surface)",
+                  borderColor: "var(--br-border)",
+                }}
+              >
                 <Link
                   href={`/groups/${group.id}`}
-                  className="flex items-center gap-4 p-4 rounded-2xl border transition-colors hover:border-white/20"
-                  style={{
-                    backgroundColor: "var(--br-surface)",
-                    borderColor: "var(--br-border)",
-                  }}
+                  className="flex items-center gap-4 p-4 flex-1 min-w-0"
                 >
                   {/* Group photo or placeholder */}
                   <div
@@ -159,9 +163,12 @@ export default async function DashboardPage() {
                       {group._count.members !== 1 ? "s" : ""}
                     </p>
                   </div>
-
-                  <span style={{ color: "var(--br-muted)" }}>›</span>
                 </Link>
+
+                {/* Per-card options menu */}
+                <div className="flex items-center pr-3">
+                  <GroupCardMenu groupId={group.id} groupTitle={group.title} />
+                </div>
               </li>
             ))}
           </ul>
