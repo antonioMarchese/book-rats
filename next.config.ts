@@ -11,6 +11,11 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "6mb",
+    },
+  },
   // Silence the Turbopack warning caused by next-pwa's webpack config.
   // next-pwa's webpack plugin is ignored during Turbopack dev; it still
   // runs correctly during `next build` (which uses webpack).
