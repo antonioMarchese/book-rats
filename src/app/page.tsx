@@ -26,12 +26,15 @@ export default async function DashboardPage() {
   });
 
   return (
-    <main className="min-h-screen safe-top safe-bottom"
-      style={{ backgroundColor: "var(--br-bg)" }}>
-
+    <main
+      className="min-h-screen safe-top safe-bottom"
+      style={{ backgroundColor: "var(--br-bg)" }}
+    >
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-4 py-4 border-b"
-        style={{ borderColor: "var(--br-border)" }}>
+      <header
+        className="flex items-center justify-between px-4 py-4 border-b"
+        style={{ borderColor: "var(--br-border)" }}
+      >
         <span className="text-xl font-bold" style={{ color: "var(--br-text)" }}>
           📚 BookRats
         </span>
@@ -49,7 +52,10 @@ export default async function DashboardPage() {
             <button
               type="submit"
               className="text-xs px-3 py-1.5 rounded-lg border transition-opacity hover:opacity-70"
-              style={{ color: "var(--br-muted)", borderColor: "var(--br-border)" }}
+              style={{
+                color: "var(--br-muted)",
+                borderColor: "var(--br-border)",
+              }}
             >
               Sign out
             </button>
@@ -59,25 +65,29 @@ export default async function DashboardPage() {
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
       <div className="px-4 py-6 space-y-6 max-w-lg mx-auto">
+        <div className="flex justify-between flex-wrap">
+          <div>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: "var(--br-text)" }}
+            >
+              Hello, {user.name?.split(" ")[0] ?? "Reader"} 👋
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "var(--br-muted)" }}>
+              Here are your book clubs.
+            </p>
+          </div>
 
-        {/* Greeting */}
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--br-text)" }}>
-            Hello, {user.name?.split(" ")[0] ?? "Reader"} 👋
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--br-muted)" }}>
-            Here are your book clubs.
-          </p>
+          {/* Create group CTA */}
+          <Link
+            href="/groups/new"
+            className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl font-medium text-sm transition-opacity hover:opacity-90 self-center"
+            style={{ backgroundColor: "var(--br-accent)", color: "#fff" }}
+          >
+            + New club
+          </Link>
         </div>
-
-        {/* Create group CTA */}
-        <Link
-          href="/groups/new"
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium text-sm transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "var(--br-accent)", color: "#fff" }}
-        >
-          + Create a new club
-        </Link>
+        {/* Greeting */}
 
         {/* Groups list */}
         {groups.length === 0 ? (
@@ -103,30 +113,44 @@ export default async function DashboardPage() {
                   }}
                 >
                   {/* Group photo or placeholder */}
-                  <div className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-xl"
-                    style={{ backgroundColor: "var(--br-bg)" }}>
+                  <div
+                    className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-xl"
+                    style={{ backgroundColor: "var(--br-bg)" }}
+                  >
                     {group.photoUrl ? (
                       <Image
                         src={group.photoUrl}
                         alt={group.title}
-                        width={48}
-                        height={48}
+                        width={500}
+                        height={500}
                         className="object-cover w-full h-full"
                       />
-                    ) : "📚"}
+                    ) : (
+                      "📚"
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate" style={{ color: "var(--br-text)" }}>
+                    <p
+                      className="font-semibold truncate"
+                      style={{ color: "var(--br-text)" }}
+                    >
                       {group.title}
                     </p>
                     {group.description && (
-                      <p className="text-xs truncate mt-0.5" style={{ color: "var(--br-muted)" }}>
+                      <p
+                        className="text-xs truncate mt-0.5"
+                        style={{ color: "var(--br-muted)" }}
+                      >
                         {group.description}
                       </p>
                     )}
-                    <p className="text-xs mt-1" style={{ color: "var(--br-muted)" }}>
-                      {group._count.members} member{group._count.members !== 1 ? "s" : ""}
+                    <p
+                      className="text-xs mt-1"
+                      style={{ color: "var(--br-muted)" }}
+                    >
+                      {group._count.members} member
+                      {group._count.members !== 1 ? "s" : ""}
                     </p>
                   </div>
 

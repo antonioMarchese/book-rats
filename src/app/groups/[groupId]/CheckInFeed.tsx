@@ -9,18 +9,20 @@ interface Props {
 }
 
 function formatDateLabel(date: Date): string {
-  const now  = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const d     = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffMs = today.getTime() - d.getTime();
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  const now = new Date();
+  // Use UTC methods — the @db.Date column is stored as UTC midnight,
+  // so local-timezone methods would shift the date backwards in UTC+ zones.
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const dUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  const diffDays = Math.round((todayUtc - dUtc) / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
-  return d.toLocaleDateString("en-GB", {
+  return new Date(dUtc).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
-    year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+    timeZone: "UTC",
+    year: new Date(dUtc).getUTCFullYear() !== now.getUTCFullYear() ? "numeric" : undefined,
   });
 }
 
@@ -139,7 +141,8 @@ export function CheckInFeed({ checkIns, currentUserId }: Props) {
                         color: "var(--br-muted)",
                       }}
                     >
-                      {checkIn.pagesRead} page{checkIn.pagesRead !== 1 ? "s" : ""}
+                      {checkIn.pagesRead} page
+                      {checkIn.pagesRead !== 1 ? "s" : ""}
                     </span>
                   )}
                   {checkIn.chaptersRead > 0 && (
@@ -150,7 +153,8 @@ export function CheckInFeed({ checkIns, currentUserId }: Props) {
                         color: "var(--br-muted)",
                       }}
                     >
-                      {checkIn.chaptersRead} chapter{checkIn.chaptersRead !== 1 ? "s" : ""}
+                      {checkIn.chaptersRead} chapter
+                      {checkIn.chaptersRead !== 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
