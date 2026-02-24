@@ -81,7 +81,7 @@ export async function createGroup(
     return newGroup;
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect(`/groups/${group.id}`);
 }
 
@@ -186,7 +186,7 @@ export async function joinGroup(formData: FormData): Promise<void> {
     data: { groupId: group.id, userId: user.id },
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect(`/groups/${group.id}`);
 }
 
@@ -204,7 +204,7 @@ export async function leaveGroup(groupId: string): Promise<void> {
     where: { userId_groupId: { userId: user.id, groupId } },
   });
 
-  if (!membership) redirect("/");
+  if (!membership) redirect("/dashboard");
 
   await prisma.$transaction(async (tx) => {
     await tx.groupMember.delete({
@@ -219,6 +219,6 @@ export async function leaveGroup(groupId: string): Promise<void> {
     }
   });
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }

@@ -25,7 +25,7 @@ export async function requireUser(): Promise<User> {
 
   if (!user) {
     // Authenticated in Supabase but not yet synced — send back through callback.
-    redirect(`/auth/callback?next=/`);
+    redirect(`/auth/callback?next=/dashboard`);
   }
 
   return user;

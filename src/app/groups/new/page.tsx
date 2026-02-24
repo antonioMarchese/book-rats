@@ -35,7 +35,7 @@ export default function NewGroupPage() {
         style={{ borderColor: "var(--br-border)" }}
       >
         <Link
-          href="/"
+          href="/dashboard"
           className="text-2xl leading-none"
           style={{ color: "var(--br-muted)" }}
           aria-label="Back"
