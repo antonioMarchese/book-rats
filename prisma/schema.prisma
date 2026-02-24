@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url and directUrl are configured in prisma.config.ts (Prisma 7+)
+  // Runtime connection is passed via PrismaClient({ datasourceUrl }) in src/lib/prisma.ts
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User — mirrored from Supabase auth.users via a sync mechanism
+// ─────────────────────────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())
+  authId    String   @unique // Supabase auth.users.id (uuid)
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  groupsCreated Group[]
+  memberships   GroupMember[]
+  checkIns      CheckIn[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group — a book club
+// ─────────────────────────────────────────────────────────────────────────────
+model Group {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  photoUrl    String?
+  inviteCode  String   @unique @default(uuid()) // used to generate invite links
+  createdAt   DateTime @default(now())
+
+  createdBy String
+  creator   User   @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  members  GroupMember[]
+  checkIns CheckIn[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GroupMember — join table between User and Group
+// ─────────────────────────────────────────────────────────────────────────────
+model GroupMember {
+  id       String   @id @default(uuid())
+  joinedAt DateTime @default(now())
+
+  userId  String
+  groupId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CheckIn — daily reading log entry
+// @@unique([groupId, userId, date]) enforces one check-in per user per group per day
+// ─────────────────────────────────────────────────────────────────────────────
+model CheckIn {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  pictureUrl   String?
+  bookTitle    String
+  pagesRead    Int      @default(0)
+  chaptersRead Int      @default(0)
+  date         DateTime @db.Date // stores date only — no time component
+  createdAt    DateTime @default(now())
+
+  userId  String
+  groupId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId, date])
+}
