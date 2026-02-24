@@ -1,6 +1,5 @@
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import LandingPage from "./LandingPage";
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -9,5 +8,6 @@ export default async function Home() {
     redirect("/dashboard");
   }
 
-  return <LandingPage />;
+  // Unauthenticated users see the animated login / landing page
+  redirect("/login");
 }
