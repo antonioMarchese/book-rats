@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import PwaBanner from "./PwaBanner";
+import { dismissPwaTutorial } from "@/actions/user";
 
 async function signOut() {
   "use server";
@@ -65,6 +67,10 @@ export default async function DashboardPage() {
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
       <div className="px-4 py-6 space-y-6 max-w-lg mx-auto">
+        {!user.hasSeenPwaTutorial && (
+          <PwaBanner dismiss={dismissPwaTutorial} />
+        )}
+
         <div className="flex justify-between flex-wrap">
           <div>
             <h1
