@@ -7,6 +7,29 @@ import { notFound } from "next/navigation";
 import { CheckInFeed } from "./CheckInFeed";
 import { GroupMenu } from "./GroupMenu";
 
+/** Consecutive-day streak ending on today or yesterday (UTC). */
+function computeStreak(datesDescUtc: number[]): number {
+  if (datesDescUtc.length === 0) return 0;
+  const now = new Date();
+  const todayUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  const DAY = 86_400_000;
+  const mostRecent = datesDescUtc[0];
+  if (mostRecent !== todayUtc && mostRecent !== todayUtc - DAY) return 0;
+  let expected = mostRecent;
+  let streak = 0;
+  for (const d of datesDescUtc) {
+    if (d === expected) {
+      streak++;
+      expected -= DAY;
+    } else if (d < expected) break;
+  }
+  return streak;
+}
+
 interface Props {
   params: Promise<{ groupId: string }>;
 }
@@ -18,8 +41,12 @@ export default async function GroupPage({ params }: Props) {
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     include: {
-      // Only userId needed — membership check + count. No full user objects required here.
-      members: { select: { userId: true } },
+      members: {
+        select: {
+          userId: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
       creator: true,
     },
   });
@@ -32,7 +59,7 @@ export default async function GroupPage({ params }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [checkIns, todayCheckIn] = await Promise.all([
+  const [checkIns, todayCheckIn, allCheckInDates] = await Promise.all([
     prisma.checkIn.findMany({
       where: { groupId },
       include: { user: true },
@@ -43,7 +70,41 @@ export default async function GroupPage({ params }: Props) {
       where: { groupId_userId_date: { groupId, userId: user.id, date: today } },
       select: { id: true },
     }),
+    prisma.checkIn.findMany({
+      where: { groupId },
+      select: { userId: true, date: true },
+      orderBy: { date: "desc" },
+    }),
   ]);
+
+  // ── Compute rankings ─────────────────────────────────────────────────────
+  const checkInsByUser = new Map<string, number[]>();
+  for (const ci of allCheckInDates) {
+    const utc = Date.UTC(
+      ci.date.getUTCFullYear(),
+      ci.date.getUTCMonth(),
+      ci.date.getUTCDate(),
+    );
+    if (!checkInsByUser.has(ci.userId)) checkInsByUser.set(ci.userId, []);
+    checkInsByUser.get(ci.userId)!.push(utc);
+  }
+  const rankings = group.members
+    .map((m) => {
+      const dates = checkInsByUser.get(m.userId) ?? [];
+      return {
+        userId: m.userId,
+        name: m.user.name,
+        email: m.user.email,
+        checkIns: dates.length,
+        streak: computeStreak(dates),
+        rank: 0,
+      };
+    })
+    .sort((a, b) => b.checkIns - a.checkIns)
+    .map((m, i) => ({ ...m, rank: i + 1 }));
+  const leader = rankings[0];
+  const currentUserRanking =
+    rankings.find((r) => r.userId === user.id) ?? rankings[0];
 
   // Build invite URL from the incoming request host
   const headersList = await headers();
@@ -119,6 +180,40 @@ export default async function GroupPage({ params }: Props) {
               {group.members.length !== 1 ? "s" : ""} · created by{" "}
               {group.creator.name ?? group.creator.email}
             </p>
+
+            {/* ── Ranking strip ─────────────────────────────────────────── */}
+            <div
+              className="pt-2 mt-1 border-t space-y-0.5"
+              style={{ borderColor: "var(--br-border)" }}
+            >
+              <p className="text-xs" style={{ color: "var(--br-muted)" }}>
+                🥇{" "}
+                <span style={{ color: "var(--br-text)", fontWeight: 500 }}>
+                  {leader.name ?? leader.email}
+                </span>
+                {leader.userId === user.id && (
+                  <span className="ml-1" style={{ color: "var(--br-muted)" }}>
+                    {" "}
+                    (you)
+                  </span>
+                )}
+                {" · "}
+                {leader.checkIns} check-in{leader.checkIns !== 1 ? "s" : ""}
+              </p>
+              {currentUserRanking.userId !== leader.userId && (
+                <p className="text-xs" style={{ color: "var(--br-muted)" }}>
+                  You:{" "}
+                  <span style={{ color: "var(--br-text)", fontWeight: 500 }}>
+                    #{currentUserRanking.rank}
+                  </span>
+                  {" · "}
+                  {currentUserRanking.checkIns} check-in
+                  {currentUserRanking.checkIns !== 1 ? "s" : ""}
+                  {currentUserRanking.streak > 0 &&
+                    ` · ${currentUserRanking.streak} 🔥`}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
