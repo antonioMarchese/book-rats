@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AutoSubscribe } from "./AutoSubscribe";
 import { CheckInFeed } from "./CheckInFeed";
 import { GroupMenu } from "./GroupMenu";
 
@@ -32,10 +33,12 @@ function computeStreak(datesDescUtc: number[]): number {
 
 interface Props {
   params: Promise<{ groupId: string }>;
+  searchParams: Promise<{ notify?: string }>;
 }
 
-export default async function GroupPage({ params }: Props) {
+export default async function GroupPage({ params, searchParams }: Props) {
   const { groupId } = await params;
+  const { notify } = await searchParams;
   const user = await requireUser();
 
   const group = await prisma.group.findUnique({
@@ -117,6 +120,7 @@ export default async function GroupPage({ params }: Props) {
       className="min-h-screen safe-top safe-bottom"
       style={{ backgroundColor: "var(--br-bg)" }}
     >
+      {notify === "1" && <AutoSubscribe groupId={groupId} />}
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <header
         className="flex items-center gap-3 px-4 py-4 border-b"

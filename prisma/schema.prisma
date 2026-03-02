@@ -24,9 +24,10 @@ model User {
   createdAt          DateTime @default(now())
   hasSeenPwaTutorial Boolean  @default(false)
 
-  groupsCreated Group[]
-  memberships   GroupMember[]
-  checkIns      CheckIn[]
+  groupsCreated     Group[]
+  memberships       GroupMember[]
+  checkIns          CheckIn[]
+  pushSubscriptions PushSubscription[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,4 +86,19 @@ model CheckIn {
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId, date])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PushSubscription — Web Push API subscription stored per device/user
+// endpoint is unique (one row per browser subscription)
+// ─────────────────────────────────────────────────────────────────────────────
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

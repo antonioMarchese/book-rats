@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { leaveGroup } from "@/actions/groups";
+import { usePushSubscription } from "@/hooks/usePushSubscription";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
@@ -22,6 +23,7 @@ export function GroupMenu({ groupId, inviteUrl, isAdmin }: Props) {
   const [open, setOpen] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { status: notifStatus, subscribe, unsubscribe } = usePushSubscription();
 
   const handleInvite = async () => {
     await navigator.clipboard.writeText(inviteUrl);
@@ -80,6 +82,21 @@ export function GroupMenu({ groupId, inviteUrl, isAdmin }: Props) {
           >
             <span>🔗</span> Invite
           </DropdownMenuItem>
+
+          {notifStatus !== "unsupported" && notifStatus !== "loading" && (
+            <DropdownMenuItem
+              onClick={notifStatus === "subscribed" ? unsubscribe : subscribe}
+              disabled={notifStatus === "denied"}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <span>{notifStatus === "subscribed" ? "🔔" : "🔕"}</span>
+              {notifStatus === "subscribed"
+                ? "Notifications on"
+                : notifStatus === "denied"
+                  ? "Notifications blocked"
+                  : "Enable notifications"}
+            </DropdownMenuItem>
+          )}
 
           {isAdmin && (
             <>

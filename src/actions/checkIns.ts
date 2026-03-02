@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { Prisma } from "@/generated/prisma/client";
+import { webpush } from "@/lib/webPush";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -99,6 +100,33 @@ export async function createCheckIn(
       };
     }
     throw err;
+  }
+
+  // ── Notify other group members ───────────────────────────────────────────
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: {
+      user: {
+        memberships: { some: { groupId } },
+      },
+      NOT: { userId: user.id },
+    },
+  });
+
+  if (subscriptions.length > 0) {
+    const payload = JSON.stringify({
+      title: `${user.name ?? user.email} checked in`,
+      body: `"${title}" — ${bookTitle}`,
+      url: `/groups/${groupId}`,
+    });
+
+    await Promise.allSettled(
+      subscriptions.map((sub) =>
+        webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload
+        )
+      )
+    );
   }
 
   revalidatePath(`/groups/${groupId}`);

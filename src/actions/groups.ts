@@ -187,7 +187,7 @@ export async function joinGroup(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/dashboard");
-  redirect(`/groups/${group.id}`);
+  redirect(`/groups/${group.id}?notify=1`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
