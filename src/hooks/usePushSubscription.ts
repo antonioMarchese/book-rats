@@ -40,19 +40,17 @@ export function usePushSubscription() {
         return;
       }
 
-      // navigator.serviceWorker.ready hangs indefinitely when no SW is
-      // registered (e.g. in development where next-pwa is disabled).
-      // Race against a 2 s timeout so the button still renders.
-      const reg = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
-      ]);
-
-      if (!reg) {
+      // getRegistration() resolves immediately (no hang) with the current SW
+      // registration or undefined if none is registered (e.g. dev mode where
+      // next-pwa is disabled). Only then do we await .ready, which is safe
+      // because we know a registration exists at that point.
+      const existingReg = await navigator.serviceWorker.getRegistration();
+      if (!existingReg) {
         setStatus("unsubscribed");
         return;
       }
 
+      const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       setStatus(sub ? "subscribed" : "unsubscribed");
     }
@@ -75,21 +73,26 @@ export function usePushSubscription() {
       return;
     }
 
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        vapidPublicKey,
-      ) as BufferSource,
-    });
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          vapidPublicKey,
+        ) as BufferSource,
+      });
 
-    await fetch("/api/push", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sub.toJSON()),
-    });
+      await fetch("/api/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub.toJSON()),
+      });
 
-    setStatus("subscribed");
+      setStatus("subscribed");
+    } catch (err) {
+      console.error("Push subscription failed:", err);
+      // status stays "unsubscribed" so the user can retry
+    }
   }, []);
 
   const unsubscribe = useCallback(async () => {
